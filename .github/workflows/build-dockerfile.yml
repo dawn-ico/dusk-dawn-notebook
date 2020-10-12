@@ -1,10 +1,10 @@
-- name: build
-  on: 
-    push:
-      workflow_dispatch: # allows manual triggering
-      branches: [$default-branch]
-  id: build
-  uses: docker/build-action@v1
-  with:
-    repository:  dawn-ico/dusk-dawn-notebook 
-    tags: main
+name: build
+on: 
+  push:
+    workflow_dispatch: # allows manual triggering
+    branches: [$default-branch]
+id: build
+uses: docker/build-action@v1
+with:
+  repository:  dawn-ico/dusk-dawn-notebook 
+  tags: main
