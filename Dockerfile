@@ -1,5 +1,5 @@
 # IMAGE needs be be set to one of the docker/dawn-env.dockerfile images
-FROM gtclang/dawn:4ed9fcad4d25
+FROM gtclang/dawn:latest
 
 ARG NB_USER=lambda
 ARG NB_UID=1000
