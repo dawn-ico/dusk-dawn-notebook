@@ -15,4 +15,4 @@ jobs:
     - name: update jupyter dependencies with repo2docker
       uses: machine-learning-apps/repo2docker-action@master
       with:
-        MYBINDERORG_CACHE: true
+        BINDER_CACHE: true
