@@ -18,4 +18,4 @@ RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
 
 RUN  pip install --no-cache-dir notebook==5.* && pip install dusk@git+https://github.com/dawn-ico/dusk.git
-CMD /bin/bas
+CMD /bin/bash
