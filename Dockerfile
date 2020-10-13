@@ -1,7 +1,12 @@
-# IMAGE needs be be set to one of the docker/dawn-env.dockerfile images
 FROM gtclang/dawn:latest
 
-ARG NB_USER=lambda
+# setup python packages:
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir notebook==5.* && \
+    pip install dusk@git+https://github.com/dawn-ico/dusk.git
+
+# setup user:
+ARG NB_USER=jovyan
 ARG NB_UID=1000
 ENV USER ${NB_USER}
 ENV NB_UID ${NB_UID}
@@ -16,6 +21,3 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
-
-RUN  pip install --no-cache-dir notebook==5.* && pip install dusk@git+https://github.com/dawn-ico/dusk.git
-CMD /bin/bash
