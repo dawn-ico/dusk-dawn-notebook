@@ -2,7 +2,7 @@ FROM gtclang/dawn:latest
 
 # setup python packages:
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir notebook==5.* && \
+    pip install --no-cache-dir jupyterlab && \
     pip install dusk@git+https://github.com/dawn-ico/dusk.git
 
 # setup user:
