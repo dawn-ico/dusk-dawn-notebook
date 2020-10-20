@@ -1,0 +1,23 @@
+name: Build Notebook Container
+on:
+  workflow_dispatch: # allows manual triggering
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+  schedule: # run every day at midnight
+    - cron: '0 0 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: checkout files in repo
+      uses: actions/checkout@master
+
+    - name: update jupyter dependencies with repo2docker
+      uses: machine-learning-apps/repo2docker-action@master
+      with:
+        DOCKER_USERNAME: dawnico
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_DAWNICO_TOKEN }}
+        BINDER_CACHE: true
