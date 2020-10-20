@@ -1,8 +1,11 @@
 name: Build Notebook Container
-on: 
+on:
   workflow_dispatch: # allows manual triggering
   push:
-    branches: [$default_branch]
+    branches: [ $default-branch ]
+  pull_request:
+  schedule: # run every day at midnight
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -15,6 +18,6 @@ jobs:
     - name: update jupyter dependencies with repo2docker
       uses: machine-learning-apps/repo2docker-action@master
       with:
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USERNAME: dawnico
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_DAWNICO_TOKEN }}
         BINDER_CACHE: true
