@@ -16,7 +16,7 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 
-RUN apt-get install ffmpeg
+RUN apt-get install ffmpeg -y
 
 # setup python packages & AtlasUtils:
 RUN pip install --upgrade pip setuptools wheel && \
