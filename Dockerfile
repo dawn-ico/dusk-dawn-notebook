@@ -16,6 +16,7 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 
+RUN apt-get update
 RUN apt-get install ffmpeg -y
 
 # setup python packages & AtlasUtils:
