@@ -49,7 +49,16 @@ void dumpNodeField(const std::string &fname, const atlas::Mesh &mesh,
                    atlasInterface::Field<double> &field, int level) {
   FILE *fp = fopen(fname.c_str(), "w+");
   for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
-    fprintf(fp, "%f\n", field(nodeIdx, level));
+    fprintf(fp, "%.17g\n", field(nodeIdx, level));
+  }
+  fclose(fp);
+}
+
+void dumpEdgeField(const std::string &fname, const atlas::Mesh &mesh,
+                   atlasInterface::Field<double> &field, int level) {
+  FILE *fp = fopen(fname.c_str(), "w+");
+  for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
+    fprintf(fp, "%.17g\n", field(edgeIdx, level));
   }
   fclose(fp);
 }
@@ -102,13 +111,51 @@ void dumpMesh4Triplot(const atlas::Mesh &mesh, const std::string prefix,
   }
 }
 
+std::vector<double> readField(const std::string &fname) {
+  std::ifstream ifile(fname, std::ios::in);
+  double num = 0.0;
+  std::vector<double> ret;
+  while (ifile >> num) {
+    ret.push_back(num);
+  }
+  return ret;
+}
+
+bool compare(const std::vector<double> ref,
+             const atlasInterface::Field<double> &view, int level) {
+  double Linf = 0.;
+  double L1 = 0.;
+  double L2 = 0.;
+  const int N = ref.size();
+  for (int idx = 0; idx < N; idx++) {
+    double dif = view(idx, level) - ref[idx];
+    Linf = fmax(fabs(dif), Linf);
+    L1 += fabs(dif);
+    L2 += dif * dif;
+  }
+  L1 /= N;
+  L2 = sqrt(L2) / sqrt(N);
+  return L1 < 1e-8 && L2 < 1e-8 && Linf < 1e-8;
+}
+
 template <typename T> static int sgn(T val) {
   return (T(0) < val) - (val < T(0));
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   // enable floating point exception
   feenableexcept(FE_INVALID | FE_OVERFLOW);
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << "test|run" << std::endl;
+    return 1;
+  }
+  const std::string mode = argv[1];
+  if (!(mode == "test" || mode == "run")) {
+    std::cerr << "Usage: " << mode << "test|run" << std::endl;
+    return 1;
+  }
+
+  const bool do_run = (mode == "run");
 
   // thermal diffusitivity (change for different materials)
   const double kappa = 1;
@@ -307,37 +354,59 @@ int main() {
   // enter time loop
   //===------------------------------------------------------------------------------------------===//
 
-  while (t < t_final) {
-    // increment counters
-    t += dt;
-    step++;
-
-    // run shallow water solver for a single timestep
+  if (!do_run) {
     dawn_generated::cxxnaiveico::diffusion<atlasInterface::atlasTag>(
         mesh, k_size, TN, TE, TEinit, TE_t, TEnabla2, inv_L, inv_vvL, nnbhV,
         boundary_edges, kappa_Field, dt_Field)
         .run();
 
-    // dump output
-    if (step % outputFreq == 0) {
-      char buf[256];
-      sprintf(buf, "out/stepT_%04d.txt", step);
-      dumpEdgeFieldOnNodes(buf, mesh, wrapper, TE, level);
-    }
+    std::vector<double> inTE = readField("ref/TE.txt");
+    std::vector<double> inTEnabla2 = readField("ref/TEnabla2.txt");
+    std::vector<double> inTN = readField("ref/TN.txt");
 
-    // dump analytical solution
-    if (step % outputFreq == 0) {
-      char buf[256];
-      sprintf(buf, "out/solT_%04d.txt", step);
-      for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
-        auto [x, y] = wrapper.nodeLocation(nodeIdx);
-        double r = sqrt(x * x + y * y);
-        TNSol(nodeIdx, level) = solution(r, t);
+    bool TEvalid = compare(inTE, TE, level);
+    bool TEnabla2valid = compare(inTEnabla2, TEnabla2, level);
+    bool TNvalid = compare(inTN, TN, level);
+
+    if (TEvalid && TEnabla2valid && TNvalid) {
+      std::cout << "congratulations!, your stencil is correct, you can "
+                   "visualize now!";
+    } else {
+      std::cout << "looks like something is off... please recheck your stencil";
+    }
+  } else {
+    while (t < t_final) {
+      // increment counters
+      t += dt;
+      step++;
+
+      // run shallow water solver for a single timestep
+      dawn_generated::cxxnaiveico::diffusion<atlasInterface::atlasTag>(
+          mesh, k_size, TN, TE, TEinit, TE_t, TEnabla2, inv_L, inv_vvL, nnbhV,
+          boundary_edges, kappa_Field, dt_Field)
+          .run();
+
+      // dump output
+      if (step % outputFreq == 0) {
+        char buf[256];
+        sprintf(buf, "out/stepT_%04d.txt", step);
+        dumpEdgeFieldOnNodes(buf, mesh, wrapper, TE, level);
       }
-      dumpNodeField(buf, mesh, TNSol, level);
-    }
 
-    // diagnostics
-    std::cout << "time " << t << " timestep " << step << " dt " << dt << "\n";
+      // dump analytical solution
+      if (step % outputFreq == 0) {
+        char buf[256];
+        sprintf(buf, "out/solT_%04d.txt", step);
+        for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
+          auto [x, y] = wrapper.nodeLocation(nodeIdx);
+          double r = sqrt(x * x + y * y);
+          TNSol(nodeIdx, level) = solution(r, t);
+        }
+        dumpNodeField(buf, mesh, TNSol, level);
+      }
+
+      // diagnostics
+      std::cout << "time " << t << " timestep " << step << " dt " << dt << "\n";
+    }
   }
 }
