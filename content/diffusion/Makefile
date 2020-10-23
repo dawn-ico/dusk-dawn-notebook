@@ -5,6 +5,7 @@ all: driver.cpp diffusion_cxx-naive.cpp
 		-DDAWN_ENABLE_BINDGEN \
 		-DDAWN_PRECISION=1 \
 		-I/usr/src/dawn/dawn/src/dawn4py/_external_src \
+		-I/usr/src/dawn/build/_deps/gridtools-src/include \
 		-isystem /usr/local/atlas/include \
 		-isystem /usr/local/AtlasUtils/include/ \
 		-isystem /usr/local/eckit/include \

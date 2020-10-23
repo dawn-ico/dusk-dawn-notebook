@@ -24,8 +24,9 @@
 
 #include "atlas_utils/utils/getAtlasFields.h"
 
-#include "diffusion_cxx-naive.cpp"
 #include <driver-includes/math.hpp>
+
+#include "diffusion_cxx-naive.cpp"
 
 void dumpEdgeFieldOnNodes(const std::string &fname, const atlas::Mesh &mesh,
                           AtlasToCartesian wrapper,
@@ -109,10 +110,6 @@ int main() {
   // enable floating point exception
   feenableexcept(FE_INVALID | FE_OVERFLOW);
 
-  // reference level of fluid, make sure to chose this large enough, otherwise
-  // initial splash may induce negative fluid height and crash the sim
-  const double refHeight = 2.;
-
   // thermal diffusitivity (change for different materials)
   const double kappa = 1;
 
@@ -133,7 +130,7 @@ int main() {
   const double dx = lDomain / nPerDim;
   const double CFL_const = 0.02;
   const double dt = CFL_const * dx * dx / kappa;
-  const double t_final = 2.;
+  const double t_final = 1.;
   int step = 0;
 
   // how often do we want to dump an output file?
@@ -337,7 +334,7 @@ int main() {
         double r = sqrt(x * x + y * y);
         TNSol(nodeIdx, level) = solution(r, t);
       }
-      dumpNodeField(buf, mesh, TNsol, level);
+      dumpNodeField(buf, mesh, TNSol, level);
     }
 
     // diagnostics
