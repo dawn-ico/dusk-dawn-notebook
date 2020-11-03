@@ -380,7 +380,7 @@ int main(int argc, char *argv[]) {
       t += dt;
       step++;
 
-      // run shallow water solver for a single timestep
+      // run diffusion solver for a single timestep
       dawn_generated::cxxnaiveico::diffusion<atlasInterface::atlasTag>(
           mesh, k_size, TN, TE, TEinit, TE_t, TEnabla2, inv_L, inv_vvL, nnbhV,
           boundary_edges, kappa_Field, dt_Field)
