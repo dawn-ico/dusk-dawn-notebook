@@ -16,8 +16,9 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 
-RUN apt-get update
-RUN apt-get install ffmpeg -y
+# ffmpeg is required for animations in exercises
+RUN apt-get update && \
+    apt-get install ffmpeg -y
 
 # setup python packages & AtlasUtils:
 RUN pip install --upgrade pip setuptools wheel && \
