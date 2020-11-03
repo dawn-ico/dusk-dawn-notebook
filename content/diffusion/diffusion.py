@@ -13,7 +13,7 @@ def diffusion(
     with levels_upward:
         # initialize
         TEinit = TE
-    with levels_upward:
+    
         # predict
         TE = TEinit + 0.5*dt*TE_t
 
@@ -35,14 +35,12 @@ def diffusion(
             (8.0 * TE * inv_primal_edge_length ** 2.)
             + (8.0 * TE * inv_vert_vert_length ** 2.)
         )
-
-    with levels_upward:
+    
         # build ODEs
         if (boundary_edge):
             TE_t = 0.
         else:
             TE_t = kappa*TEnabla2
-
-    with levels_upward:
+    
         # correct
         TE = TEinit + dt*TE_t

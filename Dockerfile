@@ -16,9 +16,14 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 
+# ffmpeg is required for animations in exercises
+RUN apt-get update && \
+    apt-get install ffmpeg -y
+
 # setup python packages & AtlasUtils:
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir jupyterlab && \
+    pip install matplotlib && \
     pip install dusk@git+https://github.com/dawn-ico/dusk.git && \
     cd ${HOME}/AtlasUtils/utils/ && chmod +x ./build_and_install.sh && ./build_and_install.sh
 
