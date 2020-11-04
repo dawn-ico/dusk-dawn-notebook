@@ -151,14 +151,24 @@ std::vector<double> readField(const std::string &fname) {
   return ret;
 }
 
-TEST(ws_shallow_water, exercise) {
+int main(int argc, char *argv[]) {
   // enable floating point exception
   feenableexcept(
       FE_ALL_EXCEPT &
       ~FE_INEXACT); // Enable all floating point exceptions but FE_INEXACT
+    
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << "test|run" << std::endl;
+    return 1;
+  }
+  const std::string mode = argv[1];
+  if (!(mode == "test" || mode == "run")) {
+    std::cerr << "Usage: " << mode << "test|run" << std::endl;
+    return 1;
+  }
 
-  const bool do_run = false;
-
+  const bool do_run = (mode == "run");    
+    
   // reference level of fluid, make sure to chose this large enough, otherwise
   // initial splash may induce negative fluid height and crash the sim
   const double refHeight = 2.;
@@ -451,7 +461,7 @@ TEST(ws_shallow_water, exercise) {
     }
 
     // run shallow water solver for a single timestep
-    dawn_generated::cxxnaiveico::ws_shallow_water<atlasInterface::atlasTag>(
+    dawn_generated::cxxnaiveico::shallow_water<atlasInterface::atlasTag>(
         mesh, k_size, hC, hC_t, vC, vC_t, uC, uC_t, hC_x, hC_y, uvC_div, hE, vE,
         uE, nx, ny, L, alpha, boundary_edges, boundary_cells, A,
         edge_orientation_cell, Grav_Field)
@@ -523,7 +533,7 @@ TEST(ws_shallow_water, exercise) {
       }
 
       // run shallow water solver for a single timestep
-      dawn_generated::cxxnaiveico::ws_shallow_water<atlasInterface::atlasTag>(
+      dawn_generated::cxxnaiveico::shallow_water<atlasInterface::atlasTag>(
           mesh, k_size, hC, hC_t, vC, vC_t, uC, uC_t, hC_x, hC_y, uvC_div, hE,
           vE, uE, nx, ny, L, alpha, boundary_edges, boundary_cells, A,
           edge_orientation_cell, Grav_Field)

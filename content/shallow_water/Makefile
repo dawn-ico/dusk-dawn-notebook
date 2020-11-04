@@ -1,4 +1,4 @@
-all: driver.cpp diffusion_cxx-naive.cpp
+all: driver.cpp shallow_water_cxx-naive.cpp
 	@g++ \
 		-o driver.cpp.o \
 		-c driver.cpp \
