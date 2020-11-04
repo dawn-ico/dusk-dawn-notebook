@@ -551,10 +551,10 @@ int main(int argc, char *argv[]) {
         char buf[256];
         sprintf(buf, "out/stepH_%04d.txt", step);
         dumpCellFieldOnNodes(buf, mesh, wrapper, hC, level);
-      }
-
-      // diagnostics
-      std::cout << "time " << t << " timestep " << step << " dt " << dt << "\n";
+          
+        // diagnostics
+        std::cout << "time " << t << " timestep " << step << " dt " << dt << "\n";
+      }      
     }
   }
 }
