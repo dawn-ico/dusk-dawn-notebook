@@ -38,3 +38,6 @@ RUN \
 USER ${NB_USER}
 
 WORKDIR ${HOME}/content
+
+# mark all jupyter notebooks as trusted so all output cells get loaded properly
+RUN find . -name "*.ipynb" -type f | xargs -n1 jupyter trust
