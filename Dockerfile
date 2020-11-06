@@ -22,7 +22,7 @@ RUN \
     chown -R ${NB_UID} ${HOME} && \
     : 'ffmpeg is required for animations in exercises' && \
     apt-get update && \
-    apt-get install ffmpeg -y && \
+    apt-get install ffmpeg clang-format -y && \
     : 'upgrade some pip stuff' && \
     pip install --upgrade pip setuptools wheel && \
     : 'install python dependencies' && \
