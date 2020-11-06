@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 
   dumpMesh4Triplot(mesh, "out/mesh", wrapper);
   if (op == diff_type::gradient) {
-    dawn_generated::cxxnaiveico::ws_gradient<atlasInterface::atlasTag>(
+    dawn_generated::cxxnaiveico::gradient<atlasInterface::atlasTag>(
         mesh, k_size, fE, nx, ny, L, A, edge_orientation_cell, fC_x, fC_y)
         .run();
     {
@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (op == diff_type::divergence) {
-    dawn_generated::cxxnaiveico::ws_divergence<atlasInterface::atlasTag>(
+    dawn_generated::cxxnaiveico::divergence<atlasInterface::atlasTag>(
         mesh, k_size, uE, vE, nx, ny, L, A, edge_orientation_cell, uvC_div)
         .run();
     auto [L1, L2, Linf] = compare(uvC_div_Sol, uvC_div, boundary_cells, level);
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (op == diff_type::curl) {
-    dawn_generated::cxxnaiveico::ws_curl<atlasInterface::atlasTag>(
+    dawn_generated::cxxnaiveico::curl<atlasInterface::atlasTag>(
         mesh, k_size, uE, vE, nx, ny, dualL, dualA, edge_orientation_node,
         uvN_curl)
         .run();
