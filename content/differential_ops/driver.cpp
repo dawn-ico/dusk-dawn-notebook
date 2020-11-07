@@ -501,7 +501,13 @@ int main(int argc, char *argv[]) {
         .run();
     auto [L1, L2, Linf] =
         compare(uvN_curl_Sol, uvN_curl, boundary_nodes, level);
-    printf("curl_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);
+    for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
+        if (boundary_nodes[nodeIdx]) {
+            uvN_curl(nodeIdx, level) = 0.;
+            uvN_curl_Sol(nodeIdx, level) = 0.;
+        }
+    }
+    printf("curl_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);      
     dumpNodeFieldOnCells("out/uv_curl.txt", mesh, uvN_curl, level);
     dumpNodeFieldOnCells("out/uv_curl_Sol.txt", mesh, uvN_curl_Sol, level);
     exit(0);
