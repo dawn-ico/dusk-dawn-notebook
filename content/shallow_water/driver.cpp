@@ -189,15 +189,15 @@ int main(int argc, char *argv[]) {
 
   // time stepping
   double t = 0.;
-  double dt = 0.002;
+  double dt = 0.02;
   double t_final = 8.;
   int step = 0;
 
   // how often do we want to dump an output file?
-  int outputFreq = 20;
+  int outputFreq = 2;
 
   // how often do you want to make some splashes?
-  int slashFreq = 1e3;
+  int slashFreq = 100e3;
 
   // generating a mesh
   auto mesh = AtlasMeshRect(nPerDim * sqrt(3), nPerDim);
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
     vC_t(cellIdx, level) = 0.;
   }
 
-  dumpMesh4Triplot(mesh, "init", hC, wrapper);
+  dumpMesh4Triplot(mesh, "out/init", hC, wrapper);
 
   //===------------------------------------------------------------------------------------------===//
   // set up boundary masks
@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
       } else {
         return true;
       }
-    };
+    };      
 
     bool allCorrect = true;
     allCorrect &= checkField("hE", hE);

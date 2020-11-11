@@ -14,9 +14,9 @@ zarray=[]
 
 out_files = sorted(glob.glob('out/stepH*.txt'))
 
-x,y = np.loadtxt('initP.txt', unpack=True)
-T = np.loadtxt('initT.txt')
-z = np.loadtxt('initC.txt')
+x,y = np.loadtxt('out/initP.txt', unpack=True)
+T = np.loadtxt('out/initT.txt')
+z = np.loadtxt('out/initC.txt')
 fig = plt.figure(figsize=(12,8), dpi=100)
 ax1 = fig.add_subplot(111, projection='3d')  
 ax1.set_zlim(1.5,2.5)
