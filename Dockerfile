@@ -26,7 +26,8 @@ RUN \
     apt-get install -y \
       nodejs \
       npm \
-      ffmpeg && \
+      ffmpeg \
+      clang-format && \
     : 'upgrade some pip stuff' && \
     pip install --upgrade pip setuptools wheel && \
     : 'install python dependencies' && \
