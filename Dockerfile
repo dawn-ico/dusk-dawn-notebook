@@ -20,15 +20,23 @@ COPY . ${HOME}
 # we use this weird `: '...'` syntax)
 RUN \
     chown -R ${NB_UID} ${HOME} && \
-    : 'ffmpeg is required for animations in exercises' && \
     apt-get update && \
-    apt-get install ffmpeg clang-format -y && \
+    : 'ffmpeg is required for animations in exercises' && \
+    : 'nodejs is required for the auto scroll extension' && \
+    apt-get install -y \
+      nodejs \
+      npm \
+      ffmpeg \
+      clang-format && \
     : 'upgrade some pip stuff' && \
     pip install --upgrade pip setuptools wheel && \
     : 'install python dependencies' && \
-    pip install --no-cache-dir jupyterlab && \
-    pip install matplotlib && \
-    pip install dusk@git+https://github.com/dawn-ico/dusk.git && \
+    pip install --no-cache-dir \
+        jupyterlab \
+        matplotlib \
+        dusk@git+https://github.com/dawn-ico/dusk.git && \
+    : 'Enable auto scroll extension' && \
+    jupyter labextension install @wallneradam/output_auto_scroll && \
     : 'setup AtlasUtils' && \
     cd ${HOME}/AtlasUtils/utils/ && \
     chmod +x ./build_and_install.sh && \
@@ -39,5 +47,7 @@ USER ${NB_USER}
 
 WORKDIR ${HOME}/content
 
-# mark all jupyter notebooks as trusted so all output cells get loaded properly
-RUN find . -name "*.ipynb" -type f | xargs -n1 jupyter trust
+RUN \
+    : 'Trust all jupyter notebooks by defaults' && \
+    find . -name "*.ipynb" -type f | xargs -n1 jupyter trust && \
+    :
