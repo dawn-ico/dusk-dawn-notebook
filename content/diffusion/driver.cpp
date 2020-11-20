@@ -113,6 +113,8 @@ void dumpMesh4Triplot(const atlas::Mesh &mesh, const std::string prefix,
 
 std::vector<double> readField(const std::string &fname) {
   std::ifstream ifile(fname, std::ios::in);
+  if (!ifile.good())
+      std::cout << "could not open " << fname << "\n";
   double num = 0.0;
   std::vector<double> ret;
   while (ifile >> num) {
@@ -134,7 +136,7 @@ bool compare(const std::vector<double> ref,
     L2 += dif * dif;
   }
   L1 /= N;
-  L2 = sqrt(L2) / sqrt(N);
+  L2 = sqrt(L2) / sqrt(N);  
   return L1 < 1e-8 && L2 < 1e-8 && Linf < 1e-8;
 }
 
@@ -142,9 +144,7 @@ template <typename T> static int sgn(T val) {
   return (T(0) < val) - (val < T(0));
 }
 
-int main(int argc, char *argv[]) {
-  // enable floating point exception
-  feenableexcept(FE_INVALID | FE_OVERFLOW);
+int main(int argc, char *argv[]) {  
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << "test|run" << std::endl;
     return 1;
@@ -277,10 +277,10 @@ int main(int argc, char *argv[]) {
   // initialize geometrical info on edges
   //===------------------------------------------------------------------------------------------===//
   for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
-    inv_L(edgeIdx, level) = 1. / wrapper.edgeLength(mesh, edgeIdx);
+    inv_L(edgeIdx, level) = 1. / (0.5*wrapper.edgeLength(mesh, edgeIdx));
     double vert_vert_length = sqrt(3.) * wrapper.edgeLength(mesh, edgeIdx);
     inv_vvL(edgeIdx, level) =
-        (vert_vert_length == 0) ? 0 : 1. / vert_vert_length;
+        (vert_vert_length == 0) ? 0 : 1. / (0.5*vert_vert_length);
   }
 
   {
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  dumpMesh4Triplot(mesh, "init", TC, wrapper);
+  dumpMesh4Triplot(mesh, "out/init", TC, wrapper);
 
   //===------------------------------------------------------------------------------------------===//
   // enter time loop
@@ -359,18 +359,33 @@ int main(int argc, char *argv[]) {
         mesh, k_size, TN, TE, TEinit, TE_t, TEnabla2, inv_L, inv_vvL, nnbhV,
         boundary_edges, kappa_Field, dt_Field)
         .run();
+      
+    auto checkField =
+        [&level](const std::string &fname,
+                 const atlasInterface::Field<double> &view) -> bool {
+      auto field = readField("ref/" + fname + "_ref.txt");
+      if (!compare(field, view, level)) {
+        std::cout << "looks like there is a mistake in " << fname << "\n";
+        return false;
+      } else {
+        std::cout << "looks like " << fname << " is correct!\n";
+        return true;
+      }
+    };      
+      
+    //dumpNodeField("ref/TN_ref.txt", mesh, TN, level);
+    //dumpEdgeField("ref/TE_ref.txt", mesh, TE, level);
+    //dumpEdgeField("ref/TEnabla2_ref.txt", mesh, TEnabla2, level);
+    //return 0;
 
-    std::vector<double> inTE = readField("ref/TE.txt");
-    std::vector<double> inTEnabla2 = readField("ref/TEnabla2.txt");
-    std::vector<double> inTN = readField("ref/TN.txt");
-
-    bool TEvalid = compare(inTE, TE, level);
-    bool TEnabla2valid = compare(inTEnabla2, TEnabla2, level);
-    bool TNvalid = compare(inTN, TN, level);
-
-    if (TEvalid && TEnabla2valid && TNvalid) {
+    bool allCorrect = true;
+    allCorrect &= checkField("TE", TE);
+    allCorrect &= checkField("TEnabla2", TEnabla2);
+    allCorrect &= checkField("TN", TN);
+      
+    if (allCorrect) {
       std::cout << "congratulations!, your stencil is correct, you can "
-                   "visualize now!";
+                   "visualize now!\n";
     } else {
       std::cout << "looks like something is off... please recheck your stencil";
     }
