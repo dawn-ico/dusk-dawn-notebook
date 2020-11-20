@@ -236,15 +236,13 @@ int main(int argc, char *argv[]) {
   auto [grad_of_div_F, grad_of_div] =
       MakeAtlasField("grad_of_div", mesh.edges().size(), k_size);        
 
-  // fields to hold analytical solutions
-  auto [f_xC_F_Sol, fC_x_Sol] =
-      MakeAtlasField("f_x_Sol", mesh.cells().size(), k_size);
-  auto [f_yC_F_Sol, fC_y_Sol] =
-      MakeAtlasField("f_y_Sol", mesh.cells().size(), k_size);
+  // fields to hold analytical solutions  
   auto [uvC_div_F_Sol, uvC_div_Sol] =
-      MakeAtlasField("f_div_Sol", mesh.cells().size(), k_size);
+      MakeAtlasField("uv_div_Sol", mesh.cells().size(), k_size);
   auto [uvN_curl_F_Sol, uvN_curl_Sol] =
-      MakeAtlasField("f_curl_Sol", mesh.nodes().size(), k_size);
+      MakeAtlasField("uv_curl_Sol", mesh.nodes().size(), k_size);
+  auto [uvN_nabla2_F_Sol, uvE_nabla2_Sol] =
+      MakeAtlasField("uv_nabla2_Sol", mesh.edges().size(), k_size);
 
   // Geometrical factors on edges
   auto [L_F, L] =
@@ -420,12 +418,7 @@ int main(int argc, char *argv[]) {
                                   // that the resulting system is left handed
       edge_orientation_node(nodeIdx, nbhIdx) = systemSign;
     }
-  }
-
-  auto wave = [](double x, double y) -> double { return sin(x) * sin(y); };
-  auto waveGrad = [](double x, double y) -> std::tuple<double, double> {
-    return {cos(x) * sin(y), sin(x) * cos(y)};
-  };
+  }  
 
   auto sphericalHarmonic = [](double x,
                               double y) -> std::tuple<double, double> {
@@ -447,6 +440,12 @@ int main(int argc, char *argv[]) {
     double dvdx = -c2 * cos(y) * sin(x) * sin(y);
     return dvdx - dudy;
   };
+  auto analyticalLaplacian = [](double x, double y) -> std::tuple<double, double> {
+    double c1 = 0.25 * sqrt(105. / (2 * M_PI));
+    double c2 = 0.5 * sqrt(15. / (2 * M_PI));
+    return {-4 * c1 * cos(2 * x) * cos(y) * cos(y) * sin(y), -4 * c2 * cos(x) * sin(y) * cos(y)};
+  };
+  
 
   // initialize test functions  
   for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
@@ -458,20 +457,19 @@ int main(int argc, char *argv[]) {
 
   // collect analytical solutions
   for (int cellIdx = 0; cellIdx < mesh.cells().size(); cellIdx++) {
-    auto [x, y] = wrapper.cellMidpoint(mesh, cellIdx);
-
-    auto [fx, fy] = waveGrad(x, y);
-    fC_x_Sol(cellIdx, level) = fx;
-    fC_y_Sol(cellIdx, level) = fy;
-
+    auto [x, y] = wrapper.cellMidpoint(mesh, cellIdx);    
     double uv_div = analyticalDivergence(x, y);
     uvC_div_Sol(cellIdx, level) = uv_div;
   }
-
   for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
     auto [x, y] = wrapper.nodeLocation(nodeIdx);
     double uv_curl = analyticalCurl(x, y);
     uvN_curl_Sol(nodeIdx, level) = uv_curl;
+  } 
+  for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
+    auto [x, y] = wrapper.edgeMidpoint(mesh, edgeIdx);
+    auto [uu, vv] = analyticalLaplacian(x, y);
+    uvE_nabla2_Sol(edgeIdx, level) = uu*nx(edgeIdx, level) + vv*ny(edgeIdx, level);
   }
     
   dumpMesh4Triplot(mesh, "out/mesh", wrapper);  
@@ -479,8 +477,51 @@ int main(int argc, char *argv[]) {
         mesh, k_size, uE, vE, nx, ny, 
         uvC_div, uvN_curl, grad_of_curl, grad_of_div, uvE_nabla2, 
         L, dualL, A, dualA, tangent_orientation, edge_orientation_node, edge_orientation_cell)
-        .run();    
-  dumpEdgeFieldOnCells("out/uv_nabla2.txt", mesh, wrapper, uvE_nabla2, level);    
+        .run();
+   {    
+    auto [L1, L2, Linf] =
+        compare(uvN_curl_Sol, uvN_curl, boundary_nodes, level);
+    for (int nodeIdx = 0; nodeIdx < mesh.nodes().size(); nodeIdx++) {
+        if (boundary_nodes[nodeIdx]) {
+            uvN_curl(nodeIdx, level) = 0.;
+            uvN_curl_Sol(nodeIdx, level) = 0.;
+        }
+    }
+              
+    printf("curl_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);
+    if (L1 < 0.002 && L2 < 0.002 && Linf < 0.008) {
+        printf("which looks right! :)\n");
+    } else {
+        printf("which looks off, please recheck your curl computation. You can copy the one from the previous exercise\n");
+    }
+    dumpNodeFieldOnCells("out/uv_curl.txt", mesh, uvN_curl, level);
+    dumpNodeFieldOnCells("out/uv_curl_Sol.txt", mesh, uvN_curl_Sol, level);
+   }
+
+    
+   {   
+    auto [L1, L2, Linf] = compare(uvC_div_Sol, uvC_div, boundary_cells, level);
+    printf("div_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);
+    if (L1 < 0.02 && L2 < 0.02 && Linf < 0.06) {
+        printf("which looks right! :)\n");
+    } else {
+        printf("which looks off, please recheck your divergence computation. You can copy the one from the previous exercise\n");
+    }
+    dumpCellField("out/uv_div.txt", mesh, uvC_div, level);
+    dumpCellField("out/uv_div_Sol.txt", mesh, uvC_div_Sol, level);    
+  }
+   
+  {
+    for (int eIdx = 0; eIdx < mesh.edges().size(); eIdx++) {
+        if (!std::isfinite(uvE_nabla2(eIdx, level))) {
+            uvE_nabla2(eIdx, level) = uvE_nabla2_Sol(eIdx,level);
+        }
+    }
+    auto [L1, L2, Linf] = compare(uvE_nabla2_Sol, uvE_nabla2, boundary_edges, level);    
+    printf("nabal2_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);
+    dumpEdgeFieldOnCells("out/uv_nabla2.txt", mesh, wrapper, uvE_nabla2, level);    
+    dumpEdgeFieldOnCells("out/uv_nabla2_Sol.txt", mesh, wrapper, uvE_nabla2_Sol, level);    
+  }
   
   return 0;
 
