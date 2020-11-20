@@ -475,6 +475,7 @@ int main(int argc, char *argv[]) {
         std::cout << "looks like there is a mistake in " << fname << "\n";
         return false;
       } else {
+          std::cout << "looks like " << fname << " is correct!\n";
         return true;
       }
     };      
