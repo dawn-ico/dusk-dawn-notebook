@@ -27,8 +27,7 @@ if (str(sys.argv[1]) == "laplacian"):
         print("please make sure that you ran ./runner laplacian before checking the laplacian")
         sys.exit()
     
-    laplacian_uv = np.loadtxt('out/uv_nabla2.txt')    
-    grad_of_div_uv = np.loadtxt('out/grad_of_div.txt')    
+    laplacian_uv = np.loadtxt('out/uv_nabla2.txt')        
     laplacian_uv_Sol = np.loadtxt('out/uv_nabla2_Sol.txt')
     fig = plt.figure(figsize=(12,4), dpi=100)    
     
