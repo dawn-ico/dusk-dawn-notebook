@@ -73,17 +73,31 @@ void dumpEdgeFieldOnNodes(const std::string &fname, const atlas::Mesh &mesh,
 
 void dumpEdgeFieldOnCells(const std::string &fname, const atlas::Mesh &mesh,
                           AtlasToCartesian wrapper,
-                          atlasInterface::Field<double> &field, int level) {
+                          atlasInterface::Field<double> &field, int level, std::vector<bool> boundary) {
   FILE *fp = fopen(fname.c_str(), "w+");
   const auto &conn = mesh.cells().edge_connectivity();
-  for (int nodeIdx = 0; nodeIdx < mesh.cells().size(); nodeIdx++) {
+  for (int cIdx = 0; cIdx < mesh.cells().size(); cIdx++) {      
     double h = 0.;
-    for (int nbhIdx = 0; nbhIdx < conn.cols(nodeIdx); nbhIdx++) {
-      int eIdx = conn(nodeIdx, nbhIdx);
+    for (int nbhIdx = 0; nbhIdx < conn.cols(cIdx); nbhIdx++) {
+      int eIdx = conn(cIdx, nbhIdx);
+      assert(eIdx != conn.missing_value());
       h += std::isfinite(field(eIdx, 0)) ? field(eIdx, 0) : 0.;
     }
-    h /= conn.cols(nodeIdx);
-    fprintf(fp, "%f\n", h);
+    h /= conn.cols(cIdx);
+    if (!boundary[cIdx]) {
+        fprintf(fp, "%f\n", h);
+    } else {
+        fprintf(fp, "%f\n", 0.);
+    }
+  }
+  fclose(fp);
+}
+
+void dumpEdgeField(const std::string &fname, const atlas::Mesh &mesh,
+                   atlasInterface::Field<double> &field, int level) {
+  FILE *fp = fopen(fname.c_str(), "w+");
+  for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
+    fprintf(fp, "%.17g\n", field(edgeIdx, level));
   }
   fclose(fp);
 }
@@ -150,6 +164,36 @@ compare(const atlasInterface::Field<double> &ref,
   L2 = sqrt(L2) / sqrt(N);
   return {L1, L2, Linf};
 }
+
+std::vector<double> readField(const std::string &fname) {
+  std::ifstream ifile(fname, std::ios::in);
+  if (!ifile.good())
+      std::cout << "could not open " << fname << "\n";
+  double num = 0.0;
+  std::vector<double> ret;
+  while (ifile >> num) {
+    ret.push_back(num);
+  }
+  return ret;
+}
+
+bool compare(const std::vector<double> ref,
+             const atlasInterface::Field<double> &view, int level) {
+  double Linf = 0.;
+  double L1 = 0.;
+  double L2 = 0.;
+  const int N = ref.size();
+  for (int idx = 0; idx < N; idx++) {
+    double dif = view(idx, level) - ref[idx];
+    Linf = fmax(fabs(dif), Linf);
+    L1 += fabs(dif);
+    L2 += dif * dif;
+  }
+  L1 /= N;
+  L2 = sqrt(L2) / sqrt(N);  
+  return L1 < 1e-8 && L2 < 1e-8 && Linf < 1e-8;
+}
+
 
 int main(int argc, char *argv[]) {
   // 2 dimensional field
@@ -251,7 +295,7 @@ int main(int argc, char *argv[]) {
       MakeAtlasField("dualL", mesh.edges().size(), k_size); // edge length
   auto [nx_F, nx] =
       MakeAtlasField("nx", mesh.edges().size(), k_size); // normals
-  auto [ny_F, ny] = MakeAtlasField("ny", mesh.edges().size(), k_size);
+  auto [ny_F, ny] = MakeAtlasField("ny", mesh.edges().size(), k_size);  
   auto [tangent_orientation_F, tangent_orientation] =
       MakeAtlasField("tangent_orientation", mesh.edges().size(), 1);    
 
@@ -281,14 +325,20 @@ int main(int argc, char *argv[]) {
   //===------------------------------------------------------------------------------------------===//
   // initialize geometrical info on edges
   //===------------------------------------------------------------------------------------------===//
+  auto dot = [](const Vector &v1, const Vector &v2) {
+    return std::get<0>(v1) * std::get<0>(v2) +
+           std::get<1>(v1) * std::get<1>(v2);
+  };
+  
   for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
     L(edgeIdx, level) = wrapper.edgeLength(mesh, edgeIdx);
-    tangent_orientation(edgeIdx) = wrapper.tangentOrientation(mesh, edgeIdx);
+    tangent_orientation(edgeIdx) = wrapper.tangentOrientation(mesh, edgeIdx);        
     dualL(edgeIdx, level) = wrapper.dualEdgeLength(mesh, edgeIdx);
     auto [nxe, nye] = wrapper.primalNormal(mesh, edgeIdx);
     nx(edgeIdx, level) = nxe;
     ny(edgeIdx, level) = nye;
   }
+  
 
   //===------------------------------------------------------------------------------------------===//
   // initialize geometrical info on cells
@@ -297,10 +347,7 @@ int main(int argc, char *argv[]) {
     A(cellIdx, level) = wrapper.cellArea(mesh, cellIdx);
   }
 
-  auto dot = [](const Vector &v1, const Vector &v2) {
-    return std::get<0>(v1) * std::get<0>(v2) +
-           std::get<1>(v1) * std::get<1>(v2);
-  };
+
   for (int cellIdx = 0; cellIdx < mesh.cells().size(); cellIdx++) {
     const atlas::mesh::HybridElements::Connectivity &cellEdgeConnectivity =
         mesh.cells().edge_connectivity();
@@ -465,8 +512,11 @@ int main(int argc, char *argv[]) {
     auto [x, y] = wrapper.nodeLocation(nodeIdx);
     double uv_curl = analyticalCurl(x, y);
     uvN_curl_Sol(nodeIdx, level) = uv_curl;
-  } 
+  }
   for (int edgeIdx = 0; edgeIdx < mesh.edges().size(); edgeIdx++) {
+      uvE_nabla2_Sol(edgeIdx, level) = 0.;
+  }
+  for (auto edgeIdx : wrapper.innerEdges(mesh)) {
     auto [x, y] = wrapper.edgeMidpoint(mesh, edgeIdx);
     auto [uu, vv] = analyticalLaplacian(x, y);
     uvE_nabla2_Sol(edgeIdx, level) = uu*nx(edgeIdx, level) + vv*ny(edgeIdx, level);
@@ -517,10 +567,26 @@ int main(int argc, char *argv[]) {
             uvE_nabla2(eIdx, level) = uvE_nabla2_Sol(eIdx,level);
         }
     }
-    auto [L1, L2, Linf] = compare(uvE_nabla2_Sol, uvE_nabla2, boundary_edges, level);    
+    auto innerEdges = wrapper.innerEdges(mesh);
+      for(int eIdx = 0; eIdx < mesh.edges().size(); eIdx++) {
+        if(std::find(innerEdges.begin(), innerEdges.end(), eIdx) == innerEdges.end()) {
+          uvE_nabla2(eIdx, 0) = uvE_nabla2_Sol(eIdx, 0);
+        }
+      }
+    //dumpEdgeField("ref/nabla2_ref.txt", mesh, uvE_nabla2, level);        
+    
+    auto [L1, L2, Linf] = compare(uvE_nabla2_Sol, uvE_nabla2, boundary_edges, level);        
     printf("nabal2_uv L1: %f, L2: %f, Linf: %f\n", L1, L2, Linf);
-    dumpEdgeFieldOnCells("out/uv_nabla2.txt", mesh, wrapper, uvE_nabla2, level);    
-    dumpEdgeFieldOnCells("out/uv_nabla2_Sol.txt", mesh, wrapper, uvE_nabla2_Sol, level);    
+    printf("which may or may not be correct, checking aginst reference...");
+    auto nabla2ref = readField("ref/nabla2_ref.txt");
+    bool correct = compare(nabla2ref, uvE_nabla2, level);
+    if (correct) {
+        printf("...check against reference shows that this is indeed correct! :)");
+    } else {
+        printf("...check against reference unfortunately shows that something is off");
+    }
+    dumpEdgeFieldOnCells("out/uv_nabla2.txt", mesh, wrapper, uvE_nabla2, level, boundary_cells);    
+    dumpEdgeFieldOnCells("out/uv_nabla2_Sol.txt", mesh, wrapper, uvE_nabla2_Sol, level, boundary_cells);        
   }
   
   return 0;

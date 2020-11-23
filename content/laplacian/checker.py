@@ -28,6 +28,7 @@ if (str(sys.argv[1]) == "laplacian"):
         sys.exit()
     
     laplacian_uv = np.loadtxt('out/uv_nabla2.txt')    
+    grad_of_div_uv = np.loadtxt('out/grad_of_div.txt')    
     laplacian_uv_Sol = np.loadtxt('out/uv_nabla2_Sol.txt')
     fig = plt.figure(figsize=(12,4), dpi=100)    
     
@@ -39,7 +40,7 @@ if (str(sys.argv[1]) == "laplacian"):
     plt.colorbar(tp,ax=ax1)
     
     ax2 = fig.add_subplot(132)
-    tp = ax2.tripcolor(x, y, triangles=T-1, facecolors=laplacian_uv_Sol, vmin=-1.5, vmax=1.5)    
+    tp = ax2.tripcolor(x, y, triangles=T-1, facecolors=laplacian_uv_Sol)    
     ax2.set_ylim(-2, 2)
     ax2.set_aspect('equal')
     ax2.set_title('laplacian solution', fontsize=10)
