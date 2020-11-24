@@ -6,6 +6,7 @@ ARG NB_UID=1000
 ENV USER ${NB_USER}
 ENV NB_UID ${NB_UID}
 ENV HOME /home/${NB_USER}
+ENV PATH="/usr/local/dawn/bin:${PATH}"
 
 RUN adduser --disabled-password \
     --gecos "Default user" \
@@ -19,7 +20,6 @@ COPY . ${HOME}
 # (because bash doesn't support comments in multi-line commands,
 # we use this weird `: '...'` syntax)
 RUN \
-    chown -R ${NB_UID} ${HOME} && \
     apt-get update && \
     : 'ffmpeg is required for animations in exercises' && \
     : 'nodejs is required for the auto scroll extension' && \
@@ -41,6 +41,7 @@ RUN \
     cd ${HOME}/AtlasUtils/utils/ && \
     chmod +x ./build_and_install.sh && \
     ./build_and_install.sh && \
+    chown -R ${NB_UID} ${HOME} && \
     :
 
 USER ${NB_USER}
