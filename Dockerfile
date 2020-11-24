@@ -20,7 +20,6 @@ COPY . ${HOME}
 # (because bash doesn't support comments in multi-line commands,
 # we use this weird `: '...'` syntax)
 RUN \
-    chown -R ${NB_UID} ${HOME} && \
     apt-get update && \
     : 'ffmpeg is required for animations in exercises' && \
     : 'nodejs is required for the auto scroll extension' && \
@@ -42,6 +41,7 @@ RUN \
     cd ${HOME}/AtlasUtils/utils/ && \
     chmod +x ./build_and_install.sh && \
     ./build_and_install.sh && \
+    chown -R ${NB_UID} ${HOME} && \
     :
 
 USER ${NB_USER}
