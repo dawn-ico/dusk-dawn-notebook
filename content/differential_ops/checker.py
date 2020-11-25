@@ -35,14 +35,14 @@ if (str(sys.argv[1]) == "curl"):
     tp = ax1.tripcolor(x, y, triangles=T-1, facecolors=curl_uv)    
     ax1.set_ylim(-2, 2)
     ax1.set_aspect('equal')
-    ax1.set_title('divergence', fontsize=10)    
+    ax1.set_title('curl', fontsize=10)    
     plt.colorbar(tp,ax=ax1)
     
     ax2 = fig.add_subplot(132)
     tp = ax2.tripcolor(x, y, triangles=T-1, facecolors=curl_uv_Sol)
     ax2.set_ylim(-2, 2)
     ax2.set_aspect('equal')
-    ax2.set_title('divergence solution', fontsize=10)
+    ax2.set_title('curl solution', fontsize=10)
     plt.colorbar(tp,ax=ax2)
     
     ax3 = fig.add_subplot(133)
