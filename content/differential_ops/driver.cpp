@@ -26,7 +26,9 @@
 
 #include <driver-includes/math.hpp>
 
-#include "diff_ops_cxx-naive.cpp"
+#include "gradient_cxx-naive.cpp"
+#include "divergence_cxx-naive.cpp"
+#include "curl_cxx-naive.cpp"
 
 void dumpCellField(const std::string &fname, const atlas::Mesh &mesh,
                    atlasInterface::Field<double> &field, int level) {

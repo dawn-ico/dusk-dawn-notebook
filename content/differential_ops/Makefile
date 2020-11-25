@@ -1,4 +1,4 @@
-all: driver.cpp diff_ops_cxx-naive.cpp
+all: driver.cpp gradient_cxx-naive.cpp divergence_cxx-naive.cpp curl_cxx-naive.cpp
 	@g++ \
 		-o driver.cpp.o \
 		-c driver.cpp \
