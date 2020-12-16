@@ -3,9 +3,6 @@ on:
   workflow_dispatch: # allows manual triggering
   push:
     branches: [ $default-branch ]
-  #pull_request: # PRs can't work correctly right now
-  schedule: # run every day at midnight
-    - cron: '0 0 * * *'
 
 jobs:
   build:
