@@ -1,35 +1,36 @@
+DAWN_DIR=/opt/dawn
+ECKIT_DIR=/opt/anaconda3/envs/ecmwf-lab/lib/metview-bundle/
+ATLAS_DIR=/opt/anaconda3/envs/ecmwf-lab/lib/metview-bundle/
+ATLASUTILS_DIR=/opt/AtlasUtils/
+
 all: driver.cpp gradient_cxx-naive.cpp divergence_cxx-naive.cpp curl_cxx-naive.cpp
 	@g++ \
 		-o driver.cpp.o \
 		-c driver.cpp \
 		-DDAWN_ENABLE_BINDGEN \
 		-DDAWN_PRECISION=1 \
-		-I/usr/src/dawn/dawn/src/dawn4py/_external_src \
-		-I/usr/src/dawn/build/_deps/gridtools-src/include \
-		-isystem /usr/local/atlas/include \
-		-isystem /usr/local/AtlasUtils/include/ \
-		-isystem /usr/local/eckit/include \
-		-isystem /usr/local/eckit/include/eckit \
-		-isystem /usr/local/eckit/include/eckit/geometry \
-		-isystem /usr/local/eckit/include/eckit/linalg \
-		-isystem /usr/local/eckit/include/eckit/mpi \
-		-isystem /usr/local/eckit/include/eckit/option \
+		-I$(DAWN_DIR)/lib/python3.9/site-packages/dawn4py/_external_src \
+		-isystem $(ATLAS_DIR)/include \
+		-isystem $(ATLASUTILS_DIR)/include/ \
+		-isystem $(ECKIT_DIR)/include \
+		-isystem $(ECKIT_DIR)/include/eckit \
+		-isystem $(ECKIT_DIR)/include/eckit/geometry \
+		-isystem $(ECKIT_DIR)/include/eckit/linalg \
+		-isystem $(ECKIT_DIR)/include/eckit/mpi \
+		-isystem $(ECKIT_DIR)/include/eckit/option \
 		-fopenmp \
 		-std=gnu++17
 	@g++\
 		driver.cpp.o \
 		-o runner \
-		-Wl,-rpath,/usr/local/atlas/lib:/usr/local/eckit/lib: \
-		/usr/local/AtlasUtils/lib/libatlasUtilsLib.a \
-		/usr/local/atlas/lib/libatlas.so \
-		/usr/local/eckit/lib/libeckit_geometry.so \
-		/usr/local/eckit/lib/libeckit_linalg.so \
-		/usr/local/eckit/lib/libeckit_mpi.so \
-		/usr/local/eckit/lib/libeckit_option.so \
-		/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so \
-		/usr/lib/x86_64-linux-gnu/libpthread.so \
-		/usr/local/eckit/lib/libeckit.so \
-		/usr/lib/x86_64-linux-gnu/librt.so \
+		-Wl,-rpath,$(ATLAS_DIR)/lib:$(ECKIT_DIR)/lib: \
+		$(ATLASUTILS_DIR)/lib/libatlasUtilsLib.a \
+		$(ATLAS_DIR)/lib/libatlas.so \
+		$(ECKIT_DIR)/lib/libeckit_geometry.so \
+		$(ECKIT_DIR)/lib/libeckit_linalg.so \
+		$(ECKIT_DIR)/lib/libeckit_mpi.so \
+		$(ECKIT_DIR)/lib/libeckit_option.so \
+		$(ECKIT_DIR)/lib/libeckit.so \
 		-lm \
 		-lpthread \
 		-ldl \
