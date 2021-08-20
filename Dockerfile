@@ -22,12 +22,15 @@ COPY . ${HOME}
 RUN \
     apt-get update && \
     : 'ffmpeg is required for animations in exercises' && \
-    : 'nodejs is required for the auto scroll extension' && \
+    : 'llvm & clang are required by dawn' && \
     apt-get install -y \
-      nodejs \
-      npm \
       ffmpeg \
-      clang-format && \
+      llvm \
+      llvm-dev \
+      clang \
+      clang-format \
+      libclang-dev \
+      libclang-cpp10-dev && \
     : 'upgrade some pip stuff' && \
     pip install --upgrade pip setuptools wheel && \
     : 'install python dependencies' && \
@@ -35,8 +38,6 @@ RUN \
         jupyterlab \
         matplotlib \
         dusk@git+https://github.com/dawn-ico/dusk.git && \
-    : 'Enable auto scroll extension' && \
-    jupyter labextension install @wallneradam/output_auto_scroll && \
     : 'setup AtlasUtils' && \
     cd ${HOME}/AtlasUtils/utils/ && \
     chmod +x ./build_and_install.sh && \
